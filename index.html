@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Which Dinner Lady Is The Witch</title>
+<meta name="description" content="One of the four dinner ladies is secretly a witch. Peek for clues, then accuse.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  /* base rules the Claude artifact viewer normally supplies */
+  :root{color-scheme:light}
+  img{max-width:100%}
+  [hidden]:not([hidden=until-found i]){display:none!important}
+
+  :root {
+    --bg: #dff0e8;
+    --tile: #cfe6db;
+    --ink: #22302b;
+    --muted: #5d7068;
+    --board: #2f4a3f;
+    --board-ink: #f3f7e8;
+    --chalk: #b8d9c4;
+    --card: #fffdf6;
+    --card-line: #d8ccb2;
+    --apron-1: #f4b942; --apron-2: #6fb3d2; --apron-3: #e57f94; --apron-4: #93c47d;
+    --peek: #fff1c9;
+    --peek-line: #e4c778;
+    --witch: #6a3fa0;
+    --witch-ink: #ffffff;
+    --witch-soft: #ece3f7;
+    --good: #2e8b57;
+    --bad: #c0392b;
+    --btn: #2f4a3f;
+    --btn-ink: #ffffff;
+    --shadow: 0 8px 22px rgba(30, 60, 45, .16);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17221d;
+      --tile: #1e2c25;
+      --ink: #eaf2ec;
+      --muted: #9fb3a8;
+      --board: #0f1a15;
+      --board-ink: #f3f7e8;
+      --chalk: #8fb89e;
+      --card: #243229;
+      --card-line: #3b4d42;
+      --peek: #3a3420;
+      --peek-line: #7a6a3a;
+      --witch: #a37ad8;
+      --witch-ink: #140a24;
+      --witch-soft: #2d2440;
+      --good: #5fcf8a;
+      --bad: #ff7b6b;
+      --btn: #8fb89e;
+      --btn-ink: #0f1a15;
+      --shadow: 0 8px 22px rgba(0, 0, 0, .5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17221d;
+    --tile: #1e2c25;
+    --ink: #eaf2ec;
+    --muted: #9fb3a8;
+    --board: #0f1a15;
+    --board-ink: #f3f7e8;
+    --chalk: #8fb89e;
+    --card: #243229;
+    --card-line: #3b4d42;
+    --peek: #3a3420;
+    --peek-line: #7a6a3a;
+    --witch: #a37ad8;
+    --witch-ink: #140a24;
+    --witch-soft: #2d2440;
+    --good: #5fcf8a;
+    --bad: #ff7b6b;
+    --btn: #8fb89e;
+    --btn-ink: #0f1a15;
+    --shadow: 0 8px 22px rgba(0, 0, 0, .5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--bg);
+    background-image: linear-gradient(var(--tile) 1px, transparent 1px), linear-gradient(90deg, var(--tile) 1px, transparent 1px);
+    background-size: 40px 40px;
+    min-height: 100vh;
+    padding: 24px 16px 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .wrap { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* menu board header */
+  .board {
+    background: var(--board);
+    color: var(--board-ink);
+    border-radius: 14px;
+    padding: 18px 22px;
+    box-shadow: var(--shadow);
+    border: 4px solid #8a6a3e;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .board h1 { margin: 0; font-family: "Chewy", "Nunito", sans-serif; font-weight: 400; font-size: 34px; letter-spacing: .01em; text-wrap: balance; }
+  .board .menu { font-size: 13px; color: var(--chalk); letter-spacing: .06em; text-transform: uppercase; }
+  .board .menu b { color: var(--board-ink); }
+
+  /* status strip */
+  .status {
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between;
+    font-size: 15px;
+  }
+  .peeks { display: flex; gap: 6px; align-items: center; }
+  .peeks i { width: 16px; height: 16px; border-radius: 50%; background: var(--witch); display: inline-block; transition: opacity .2s; }
+  .peeks i.used { opacity: .2; }
+  .streak { color: var(--muted); }
+  .streak b { color: var(--ink); }
+
+  /* dinner ladies */
+  .ladies { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .lady {
+    background: var(--card);
+    border: 2px solid var(--card-line);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: transform .2s;
+  }
+  .lady.accused-right { border-color: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 30%, transparent); }
+  .lady.accused-wrong { border-color: var(--bad); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 30%, transparent); }
+  .lady.was-witch { border-color: var(--witch); }
+  .face {
+    height: 96px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .face.a1 { background: var(--apron-1); } .face.a2 { background: var(--apron-2); }
+  .face.a3 { background: var(--apron-3); } .face.a4 { background: var(--apron-4); }
+  .face .hat { position: absolute; font-size: 34px; top: -6px; left: 50%; transform: translateX(-50%) rotate(-12deg); opacity: 0; transition: opacity .4s, top .4s; }
+  .lady.was-witch .face .hat { opacity: 1; top: 2px; }
+  .name { font-family: "Chewy", sans-serif; font-size: 22px; font-weight: 400; margin: 0; }
+  .serving { font-size: 13px; color: var(--muted); margin: -6px 0 0; }
+
+  .peekrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .peek {
+    font: inherit; font-size: 12px; font-weight: 800;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 2px dashed var(--peek-line);
+    background: var(--peek);
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .peek:hover:not(:disabled) { transform: translateY(-2px); }
+  .peek:disabled { cursor: default; opacity: .55; border-style: solid; }
+  .peek:focus-visible, .accuse:focus-visible, .big:focus-visible { outline: 3px solid var(--witch); outline-offset: 2px; }
+
+  .clues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; min-height: 22px; font-size: 13px; line-height: 1.35; }
+  .clues li { padding: 6px 8px; border-radius: 7px; background: var(--witch-soft); animation: pop .3s ease both; }
+  .clues li.plain { background: transparent; border: 1px solid var(--card-line); }
+  .clues li .tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: block; }
+  @keyframes pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+
+  .accuse {
+    font: inherit; font-weight: 800; font-size: 14px;
+    padding: 10px;
+    border-radius: 9px;
+    border: 0;
+    background: var(--witch);
+    color: var(--witch-ink);
+    cursor: pointer;
+    margin-top: auto;
+  }
+  .accuse:hover:not(:disabled) { filter: brightness(1.1); }
+  .accuse:disabled { opacity: .35; cursor: default; }
+
+  /* result */
+  .result {
+    display: none;
+    background: var(--card);
+    border: 2px solid var(--card-line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .result.show { display: block; animation: pop .35s ease both; }
+  .result h2 { margin: 0 0 6px; font-family: "Chewy", sans-serif; font-weight: 400; font-size: 30px; }
+  .result h2.win { color: var(--good); } .result h2.lose { color: var(--bad); }
+  .result p { margin: 0 0 14px; font-size: 15px; max-width: 60ch; margin-left: auto; margin-right: auto; }
+  .big {
+    font: inherit; font-weight: 800; font-size: 15px;
+    padding: 12px 18px; border-radius: 10px; border: 0;
+    background: var(--btn); color: var(--btn-ink); cursor: pointer;
+  }
+  .big:hover { filter: brightness(1.1); }
+  .howto { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .howto b { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) {
+    .clues li, .result.show { animation: none; }
+    .lady, .peek { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="board">
+    <h1>Which Dinner Lady Is The Witch?</h1>
+    <div class="menu">Today's dinner: <b id="menu">roast potatoes, peas and green custard</b></div>
+  </div>
+
+  <div class="status">
+    <div class="peeks" id="peeks" aria-label="Peeks left"></div>
+    <div class="streak" id="streak"></div>
+  </div>
+
+  <div class="ladies" id="ladies"></div>
+
+  <div class="result" id="result">
+    <h2 id="resultTitle"></h2>
+    <p id="resultText"></p>
+    <button class="big" id="again">Next lunchtime</button>
+  </div>
+
+  <p class="howto">
+    <b>How to play:</b> one of the four dinner ladies is secretly a witch. You get <b>5 peeks</b>.
+    Peek in a pocket, a pot or at some shoes to find a clue. Witchy clues are purple.
+    Careful: normal dinner ladies can have <b>one</b> weird thing about them too. The witch always has <b>two</b>.
+    When you're sure, press <b>Accuse!</b>
+  </p>
+</div>
+
+<script>
+(() => {
+  const NAMES = ['Mrs Pudding', 'Mrs Gravy', 'Mrs Crumble', 'Mrs Sprout', 'Mrs Beans', 'Mrs Custard',
+                 'Mrs Chips', 'Mrs Jelly', 'Mrs Mash', 'Mrs Pickle', 'Mrs Waffle', 'Mrs Turnip'];
+  const SERVING = ['on mash duty', 'doing the peas', 'in charge of custard', 'on the chips', 'ladling the gravy',
+                   'handing out jelly', 'guarding the sprouts', 'on pudding', 'stirring the soup', 'on toast'];
+  const MENUS = ['roast potatoes, peas and green custard', 'fish fingers, beans and a wobbly jelly',
+                 'pizza slice, sweetcorn and a mystery pudding', 'sausage, mash and gravy that moves',
+                 'chicken nuggets, sprouts and purple custard', 'pasta, garlic bread and cold rice pudding'];
+
+  // Clues are split by where you find them. Each spot has witchy and innocent options.
+  const CLUES = {
+    Pocket: {
+      witch: ['a small toad, and it winked at you', 'a tiny broomstick that fits in a pencil case', 'a spell book called "Custard Curses"',
+              'a bag of newt eyes labelled "for the gravy"', 'a wand disguised as a spoon', 'a pointy black hat, folded up really small'],
+      plain: ['a packet of tissues', 'her car keys', 'a half-eaten biscuit', 'a photo of her cat', 'a pen that says "BEST DINNER LADY"',
+              'some hair grips', 'a bus ticket', 'a mint humbug']
+    },
+    Pot: {
+      witch: ['the custard is bubbling and it just said "hello"', 'the soup is glowing green', 'the peas are floating in mid-air',
+              'she stirs the gravy the wrong way round and it goes purple', 'there is a bat wing in the beans', 'the mash is cackling quietly'],
+      plain: ['just normal peas', 'the custard looks a bit lumpy but that is all', 'gravy, lots of it', 'mash with a spoon stuck in it',
+              'beans, slightly cold', 'sprouts nobody wants', 'the pot is empty, she ran out']
+    },
+    Shoes: {
+      witch: ['pointy black boots with curly toes', 'her feet are not touching the floor', 'a black cat is sitting on them',
+              'the laces are tied by themselves', 'they leave tiny scorch marks on the tiles', 'green sparkly socks with stars that twinkle'],
+      plain: ['sensible white trainers', 'crocs with a smiley badge', 'wellies, it rained this morning', 'brown lace ups',
+              'slippers, she forgot to change', 'trainers with a bit of mash on them']
+    }
+  };
+  const SPOTS = ['Pocket', 'Pot', 'Shoes'];
+
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+
+  const ladiesEl = document.getElementById('ladies');
+  const peeksEl = document.getElementById('peeks');
+  const resultEl = document.getElementById('result');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultText = document.getElementById('resultText');
+  const streakEl = document.getElementById('streak');
+  const menuEl = document.getElementById('menu');
+
+  const PEEKS = 5;
+  let ladies, witchIndex, peeksLeft, over;
+
+  function newRound() {
+    over = false;
+    peeksLeft = PEEKS;
+    witchIndex = Math.floor(Math.random() * 4);
+    const names = shuffle(NAMES).slice(0, 4);
+    const serving = shuffle(SERVING).slice(0, 4);
+    menuEl.textContent = pick(MENUS);
+
+    // The witch gets two witchy spots. Every normal lady gets exactly one red herring.
+    ladies = names.map((name, i) => {
+      const isWitch = i === witchIndex;
+      const witchySpots = shuffle(SPOTS).slice(0, isWitch ? 2 : 1);
+      const clues = {};
+      for (const spot of SPOTS) {
+        const witchy = witchySpots.includes(spot);
+        clues[spot] = { witchy, text: pick(CLUES[spot][witchy ? 'witch' : 'plain']) };
+      }
+      return { name, serving: serving[i], isWitch, clues, seen: [] };
+    });
+
+    resultEl.classList.remove('show');
+    renderLadies();
+    renderPeeks();
+    showStreak();
+  }
+
+  function renderLadies() {
+    ladiesEl.innerHTML = '';
+    ladies.forEach((lady, i) => {
+      const card = document.createElement('div');
+      card.className = 'lady';
+      card.dataset.i = i;
+      card.innerHTML = `
+        <div class="face a${i + 1}">👩‍🍳<span class="hat">🎩</span></div>
+        <h3 class="name">${lady.name}</h3>
+        <p class="serving">${lady.serving}</p>
+        <div class="peekrow">
+          ${SPOTS.map(s => `<button class="peek" data-spot="${s}">${s}</button>`).join('')}
+        </div>
+        <ul class="clues"></ul>
+        <button class="accuse">Accuse!</button>`;
+      ladiesEl.appendChild(card);
+    });
+  }
+
+  function renderPeeks() {
+    peeksEl.innerHTML = 'Peeks left: ' + Array.from({ length: PEEKS }, (_, i) =>
+      `<i class="${i < PEEKS - peeksLeft ? 'used' : ''}"></i>`).join('');
+  }
+
+  function peek(card, spot) {
+    if (over || peeksLeft <= 0) return;
+    const lady = ladies[card.dataset.i];
+    if (lady.seen.includes(spot)) return;
+    lady.seen.push(spot);
+    peeksLeft--;
+    const clue = lady.clues[spot];
+    const li = document.createElement('li');
+    li.className = clue.witchy ? '' : 'plain';
+    li.innerHTML = `<span class="tag">${spot}</span>${clue.text}`;
+    card.querySelector('.clues').appendChild(li);
+    card.querySelector(`.peek[data-spot="${spot}"]`).disabled = true;
+    renderPeeks();
+    if (peeksLeft === 0) document.querySelectorAll('.peek').forEach(b => b.disabled = true);
+  }
+
+  function accuse(card) {
+    if (over) return;
+    over = true;
+    const i = Number(card.dataset.i);
+    const lady = ladies[i];
+    const witch = ladies[witchIndex];
+    document.querySelectorAll('.peek, .accuse').forEach(b => b.disabled = true);
+    document.querySelectorAll('.lady')[witchIndex].classList.add('was-witch');
+
+    // Show every clue so you can see what you missed.
+    ladies.forEach((l, j) => {
+      const ul = document.querySelectorAll('.lady')[j].querySelector('.clues');
+      for (const spot of SPOTS) {
+        if (l.seen.includes(spot)) continue;
+        const li = document.createElement('li');
+        li.className = l.clues[spot].witchy ? '' : 'plain';
+        li.style.opacity = .6;
+        li.innerHTML = `<span class="tag">${spot} (missed)</span>${l.clues[spot].text}`;
+        ul.appendChild(li);
+      }
+    });
+
+    const s = loadStats();
+    if (lady.isWitch) {
+      card.classList.add('accused-right');
+      resultTitle.className = 'win';
+      resultTitle.textContent = 'You got her!';
+      resultText.textContent = `${witch.name} was the witch. She has been sent to the headteacher's office and the custard has gone back to normal. Well, mostly normal.`;
+      s.streak = (s.streak || 0) + 1;
+      s.best = Math.max(s.best || 0, s.streak);
+      s.caught = (s.caught || 0) + 1;
+    } else {
+      card.classList.add('accused-wrong');
+      resultTitle.className = 'lose';
+      resultTitle.textContent = 'Wrong dinner lady!';
+      resultText.textContent = `${lady.name} was just a normal dinner lady. The real witch was ${witch.name}, and she turned you into a toad for the rest of lunch. You still had to eat the sprouts.`;
+      s.streak = 0;
+      s.toaded = (s.toaded || 0) + 1;
+    }
+    saveStats(s);
+    showStreak();
+    resultEl.classList.add('show');
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function loadStats() { try { return JSON.parse(localStorage.getItem('witch-dinner-lady') || '{}'); } catch { return {}; } }
+  function saveStats(s) { try { localStorage.setItem('witch-dinner-lady', JSON.stringify(s)); } catch {} }
+  function showStreak() {
+    const s = loadStats();
+    streakEl.innerHTML = `Streak: <b>${s.streak || 0}</b> · Best: <b>${s.best || 0}</b> · Witches caught: <b>${s.caught || 0}</b> · Times toaded: <b>${s.toaded || 0}</b>`;
+  }
+
+  ladiesEl.addEventListener('click', e => {
+    const card = e.target.closest('.lady');
+    if (!card) return;
+    if (e.target.classList.contains('peek')) peek(card, e.target.dataset.spot);
+    if (e.target.classList.contains('accuse')) accuse(card);
+  });
+  document.getElementById('again').addEventListener('click', newRound);
+
+  newRound();
+})();
+</script>
+</body>
+</html>
